@@ -16,7 +16,7 @@
 (define-foreign-library libssh2
   (:darwin "libssh2.dylib")
   (:unix  "libssh2.so.1")
-  (:win32 "libssh2-1.dll")
+  (:win32 "libssh2.dll")
   (t (:default "libssh2")))
 
 (use-foreign-library libssh2)
@@ -466,6 +466,34 @@
   (result-or-error
     (%channel-wait-eof channel)))
 
+(defcfun ("libssh2_channel_request_pty_ex" %libssh2-channel-request-pty-ex) +error-code+
+  (channel +channel+)
+  (term :string) (term-length :unsigned-int)
+  (modes :string) (modes-length :unsigned-int)
+  (width :int) (height :int)
+  (width-px :int) (height-px :int))
+
+(defun channel-request-pty (channel &key (terminal "vanilla") (modes "") (width 80) (height 24) (width-px 0) (height-px 0))
+  (with-foreign-strings (((fs-term fs-term-size) terminal)
+                         ((fs-modes fs-modes-size) modes))
+    (result-or-error
+      (%libssh2-channel-request-pty-ex channel
+                                       fs-term (- fs-term-size 1)
+                                       fs-modes (- fs-modes-size 1)
+                                       width height
+                                       width-px height-px))))
+
+(defcfun ("libssh2_channel_request_pty_size_ex" %libssh2-channel-request-pty-size-ex) +error-code+
+  (channel +channel+)
+  (width :int) (height :int)
+  (width-px :int) (height-px :int))
+
+(defun channel-request-pty-size (channel width height &key (width-px 0) (height-px 0))
+  (result-or-error
+      (%libssh2-channel-request-pty-size-ex channel
+                                       width height
+                                       width-px height-px)))
+
 (defcfun ("libssh2_channel_process_startup" %channel-process-startup) +ERROR-CODE+
   (channel +channel+)
   (request :string) (request-length :unsigned-int)
@@ -484,7 +512,7 @@
                           fs-name  (- fs-name-size 1)
                           fs-value (- fs-value-size 1)))))
 
-(defun channel-process-start (channel request message)
+(defun channel-process-start (channel request message) ()
   (with-foreign-strings (((fs-request fs-request-size) request)
                          ((fs-message fs-message-size) message))
     (result-or-error

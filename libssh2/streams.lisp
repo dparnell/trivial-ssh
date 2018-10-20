@@ -71,7 +71,7 @@
        (session-set-blocking new-session :blocking)
 
        (setq retval
-         (session-handshake new-session (usocket-get-fd new-socket)))
+         (%session-handshake new-session (usocket-get-fd new-socket)))
 
        (if (eq retval :error-none)
          (make-instance 'ssh-connection

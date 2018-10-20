@@ -48,6 +48,9 @@
            :channel-send-eof
            :channel-exit-status
            :channel-scp-recv
+           :channel-request-pty
+           :channel-request-pty-size
+
 
            ;; STREAMS API // BLOCKING
 

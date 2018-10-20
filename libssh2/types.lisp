@@ -181,3 +181,16 @@
   ((code :type     keyword
          :accessor code
          :initarg  :code)))
+
+(defcstruct +stat+
+         (dev :unsigned-int)
+         (ino :unsigned-int)
+         (mode :unsigned-int)
+         (nlink :unsigned-int)
+         (uid :unsigned-int)
+         (gid :unsigned-int)
+         (rdev :unsigned-int)
+         (size :unsigned-int)
+         (atime :unsigned-int)
+         (mtime :unsigned-int)
+         (ctime :unsigned-int))
