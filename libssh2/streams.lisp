@@ -544,6 +544,26 @@
         (throw-last-error session))
       (throw-last-error session)))))
 
+(defmethod pty ((ssh ssh-connection) &key (terminal "vanilla") (width 80) (height 24) (width-px 0) (height-px 0))
+  (with-slots (socket session) ssh
+    (let ((new-channel
+            (channel-open session)))
+      (if (pointerp new-channel)
+          (if (not (null-pointer-p new-channel))
+              (if (eq (channel-request-pty new-channel :terminal terminal
+                                                       :width width
+                                                       :height height
+                                                       :width-px width-px
+                                                       :height-px height-px) :ERROR-NONE)
+                  (let ((retval (channel-shell new-channel)))
+                    (if (eq retval :ERROR-NONE)
+                        (make-instance 'ssh-channel-exec
+                                   :socket  socket
+                                   :channel new-channel)
+                    (throw-last-error session))))
+              (throw-last-error session))
+          (throw-last-error session)))))
+
 (defmethod scp-input ((ssh ssh-connection) (path string))
   (multiple-value-bind (new-channel stat)
     (channel-scp-recv (session ssh) path)
@@ -583,6 +603,18 @@
                                 (concatenate 'string ,command " 2>&1"))
      (let ((*channel-read-zero-as-eof* t))
        ,@body)))
+
+(defmacro with-pty ((stdio-stream ssh-connection &key (terminal "vanilla") (width 80) (height 24) (width-px 0) (height-px 0))
+            &body body)
+  `(let ((,stdio-stream (pty ,ssh-connection :terminal ,terminal :width ,width :height ,height :width-px ,width-px :height-px ,height-px)))
+   (unwind-protect
+      (let ((body-retval
+              (let ((*channel-read-zero-as-eof* t)) ,@body)))
+        (values-list
+         (list body-retval
+               (channel-exit-status (channel ,stdio-stream)))))
+     (close ,stdio-stream))))
+
 
 (defmacro with-scp-input ((istream ssh-connection path object-stat)
               &body body)

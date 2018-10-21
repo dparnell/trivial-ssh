@@ -523,8 +523,12 @@
 (defun channel-exec (channel cmd)
   (channel-process-start channel "exec" cmd))
 
-(defun channel-shell (channel cmd)
-  (channel-process-start channel "shell" cmd))
+(defun channel-shell (channel)
+  (with-foreign-string ((shell shell-size) "shell")
+    (result-or-error
+      (%channel-process-startup channel
+                                shell shell-size
+                                (cffi:null-pointer) 0))))
 
 (defun channel-subsystem (channel cmd)
   (channel-process-start channel "subsystem" cmd))

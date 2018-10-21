@@ -9,6 +9,7 @@
            :agent
            :with-connection
            :with-command
+           :with-pty
            :download-file
            :upload-file))
 (in-package :trivial-ssh)
@@ -88,6 +89,12 @@
 
 (defmacro with-command ((conn iostream command) &rest body)
   `(libssh2:with-execute* (,iostream ,conn ,command)
+     ,@body))
+
+;;; PTY stuff
+
+(defmacro with-pty ((conn iostream &key (terminal "vanilla") (width 80) (height 24)) &rest body)
+  `(libssh2:with-pty (,iostream ,conn, :terminal ,terminal :width ,width :height ,height)
      ,@body))
 
 ;;; SCP file transfers

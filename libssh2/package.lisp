@@ -116,6 +116,7 @@
            :SCP-OUTPUT
            :WITH-EXECUTE
            :WITH-EXECUTE*
+           :WITH-PTY
            :WITH-SCP-INPUT
            :WITH-SCP-OUTPUT
 
