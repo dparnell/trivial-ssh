@@ -180,6 +180,15 @@
        (password auth))
       :ERROR-NONE))
 
+
+(defclass auth-keyboard-interactive (auth-data) ())
+
+(defmethod authentication ((ssh ssh-connection) (auth auth-keyboard-interactive))
+  (eq (user-auth-interactive-stdio
+       (session  ssh)
+       (login    auth))
+      :ERROR-NONE))
+
 (defclass auth-publickey (auth-data)
   ((public-key  :type     string
                 :initarg  :public-key
@@ -248,6 +257,10 @@
   (make-instance 'auth-password-emul
                  :login    login
                  :password password))
+
+(defun make-keyboard-interactive-auth (login)
+  (make-instance 'auth-keyboard-interactive
+                 :login login))
 
 (defvar *ssh-channel-buffer-size* 8196)
 

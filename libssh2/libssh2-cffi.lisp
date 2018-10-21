@@ -399,6 +399,38 @@
     (user-auth-interactive session username
                            (callback trivial-keyboard-interactive-emulation))))
 
+(defcallback keyboard-interactive-callback :void
+    ((login :pointer)      (login-length       :unsigned-int)
+     (instruction :string) (instruction-length :unsigned-int)
+     (num-prompts :int)
+     (prompts   (:pointer (:struct +kbd-prompt+)))
+     (responses (:pointer (:struct +kbd-response+)))
+     (abstract  (:pointer :pointer)))
+  ;; Just don't care about input. Only send password
+  ;; Please, write you'r own callback, if you care
+  (declare
+   (ignore login)       (ignore login-length)
+   (ignore abstract))
+  (if (> instruction-length 0)
+      (let ((inst (cffi:foreign-string-to-lisp instruction :count instruction-length)))
+        (format t "~a~%" inst)))
+  (loop for i below num-prompts
+        do
+           (with-foreign-slots ((text length)
+                                (mem-aref prompts '(:struct +kbd-prompt+) i)
+                                (:struct +kbd-prompt+))
+             (let ((prompt-str (cffi:foreign-string-to-lisp text :count length)))
+               (princ prompt-str)))
+           (with-foreign-slots ((text length)
+                                (mem-aref responses '(:struct +kbd-response+) i)
+                                (:struct +kbd-response+))
+             (setf text   (foreign-string-alloc (read-line)))
+             (setf length (foreign-funcall "strlen" :pointer text :unsigned-int)))))
+
+(defun user-auth-interactive-stdio (session username)
+  (user-auth-interactive session username
+                         (callback keyboard-interactive-callback)))
+
 (defcfun ("libssh2_userauth_publickey_fromfile_ex" %user-auth-publickey) +ERROR-CODE+
   (session +session+)
   (username :string) (username-len :unsigned-int)

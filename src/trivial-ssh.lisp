@@ -4,6 +4,7 @@
   (:nicknames :ssh)
   (:export :hosts-db
            :*automatically-accept-keys*
+           :user
            :pass
            :key
            :agent
@@ -49,6 +50,9 @@
                                           (libssh2::hosts-db conn))))))
 
 ;;; Connection
+
+(defun user (username)
+  (libssh2:make-keyboard-interactive-auth username))
 
 (defun pass (username password)
   "Authenticate using a username and password"

@@ -30,6 +30,8 @@
            :user-auth-agent
            :user-auth-password
            :user-auth-publickey
+           :user-auth-interactive-trivial
+           :user-auth-interactive-stdio
 
            :channel-open
            :channel-close
@@ -81,6 +83,7 @@
            :AUTH-AGENT
            :MAKE-PUBLICKEY-AUTH
            :MAKE-AGENT-AUTH
+           :MAKE-KEYBOARD-INTERACTIVE-AUTH
            :MAKE-PASSWORD-AUTH
            :MAKE-PASSWORD-EMUL-AUTH
            :MAKE-AUTH-DATA
