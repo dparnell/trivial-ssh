@@ -406,8 +406,7 @@
      (prompts   (:pointer (:struct +kbd-prompt+)))
      (responses (:pointer (:struct +kbd-response+)))
      (abstract  (:pointer :pointer)))
-  ;; Just don't care about input. Only send password
-  ;; Please, write you'r own callback, if you care
+
   (declare
    (ignore login)       (ignore login-length)
    (ignore abstract))
