@@ -543,6 +543,13 @@
                           fs-name  (- fs-name-size 1)
                           fs-value (- fs-value-size 1)))))
 
+(defcfun ("libssh2_channel_set_blocking" %channel-set-blocking) :void
+  (channel +channel+)
+  (flag :int))
+
+(defun channel-set-blocking (channel flag)
+    (%channel-set-blocking channel (if flag 1 0)))
+
 (defun channel-process-start (channel request message) ()
   (with-foreign-strings (((fs-request fs-request-size) request)
                          ((fs-message fs-message-size) message))
@@ -596,8 +603,8 @@
              ((and (= ret 0) *channel-read-zero-as-eof*) t)
              ((= ret 0)      (channel-eofp channel))
              (t nil)))
-            (result-or-error
-              (convert-from-foreign ret '+ERROR-CODE+))))))
+          (result-or-error
+            (convert-from-foreign ret '+ERROR-CODE+))))))
 
 (defcfun ("libssh2_channel_write_ex" %channel-write-ex) :int
   (channel +CHANNEL+) (stream +STREAM-ID+)

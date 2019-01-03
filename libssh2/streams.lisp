@@ -55,38 +55,38 @@
            :initarg   :hash)))
 
 (defmethod create-ssh-connection (host
-                  &key
-                  (hosts-db (default-known-hosts))
-                  (port 22)
-                  (read-timeout 5)
-                  (write-timeout 5))
+                                  &key
+                                    (hosts-db (default-known-hosts))
+                                    (port 22)
+                                    (read-timeout 5)
+                                    (write-timeout 5))
   (let ((new-session nil)
-    (new-socket  nil)
-    (retval      :error-none))
-  (unwind-protect
-     (progn
-       (setq new-session (session-init))
-       (setq new-socket (usocket:socket-connect host port))
-       (set-timeouts new-socket read-timeout write-timeout)
-       (session-set-blocking new-session :blocking)
+        (new-socket  nil)
+        (retval      :error-none))
+    (unwind-protect
+         (progn
+           (setq new-session (session-init))
+           (setq new-socket (usocket:socket-connect host port))
+           (set-timeouts new-socket read-timeout write-timeout)
+           (session-set-blocking new-session :blocking)
 
-       (setq retval
-         (%session-handshake new-session (usocket-get-fd new-socket)))
+           (setq retval
+                 (%session-handshake new-session (usocket-get-fd new-socket)))
 
-       (if (eq retval :error-none)
-         (make-instance 'ssh-connection
-                :session  new-session
-                :socket   new-socket
-                :host     host
-                :port     port
-                :hosts-db hosts-db)
-         (throw-last-error new-session)))
-    (unless (eq retval :error-none)
-    (unless (null-pointer-p new-session)
-      (session-free new-session))
-    (unless (null new-socket)
-      (usocket:socket-close new-socket))
-    nil))))
+           (if (eq retval :error-none)
+               (make-instance 'ssh-connection
+                              :session  new-session
+                              :socket   new-socket
+                              :host     host
+                              :port     port
+                              :hosts-db hosts-db)
+               (throw-last-error new-session)))
+      (unless (eq retval :error-none)
+        (unless (null-pointer-p new-session)
+          (session-free new-session))
+        (unless (null new-socket)
+          (usocket:socket-close new-socket))
+        nil))))
 
 
 (defmethod destroy-ssh-connection ((ssh ssh-connection) &key (description "") (lang ""))
@@ -134,21 +134,21 @@
           t
           (restart-case
               (error 'ssh-bad-hostkey
-           :reason host-key-status
-           :hash (session-hostkey-fingerprint (session ssh)))
-      (accept () t)
-      (drop () nil)
-      (accept-once  (&optional (comment ""))
-        (progn
-        (known-hosts-add known-hosts (ssh-host+port-format ssh) host-key
-                 :comment comment)
-        t))
-      (accept-always (&optional (comment ""))
-        (progn
-        (known-hosts-add known-hosts (ssh-host+port-format ssh) host-key
-                 :comment comment)
-        (known-hosts-writefile known-hosts (hosts-db ssh))
-        t)))))))
+                     :reason host-key-status
+                     :hash (session-hostkey-fingerprint (session ssh)))
+            (accept () t)
+            (drop () nil)
+            (accept-once  (&optional (comment ""))
+              (progn
+                (known-hosts-add known-hosts (ssh-host+port-format ssh) host-key
+                                 :comment comment)
+                t))
+            (accept-always (&optional (comment ""))
+              (progn
+                (known-hosts-add known-hosts (ssh-host+port-format ssh) host-key
+                                 :comment comment)
+                (known-hosts-writefile known-hosts (hosts-db ssh))
+                t)))))))
 
 (defmethod authentication-methods ((ssh ssh-connection) (login string))
   (session-auth-methods-list (session ssh) login))
@@ -214,21 +214,21 @@
 (defmethod authentication ((ssh ssh-connection) (auth auth-agent))
   (let ((agent (agent-init (session ssh)))
         (username (login auth)))
-  (unwind-protect
-       (if (and agent (eq (agent-connect agent)
-                          :ERROR-NONE))
-           (let ((next-identity (agent-identities-iterator agent)))
-             (when next-identity
-               (with-foreign-string (fs-username username)
-                 (loop for identity = (funcall next-identity)
-                    while identity do
-                      (if (eq
-                           (%agent-userauth agent fs-username identity)
-                           :ERROR-NONE)
-                          (return t))))))
-           (throw-last-error (session ssh)))
-    (when agent
-      (agent-free agent)))))
+    (unwind-protect
+         (if (and agent (eq (agent-connect agent)
+                            :ERROR-NONE))
+             (let ((next-identity (agent-identities-iterator agent)))
+               (when next-identity
+                 (with-foreign-string (fs-username username)
+                   (loop for identity = (funcall next-identity)
+                      while identity do
+                        (if (eq
+                             (%agent-userauth agent fs-username identity)
+                             :ERROR-NONE)
+                            (return t))))))
+             (throw-last-error (session ssh)))
+      (when agent
+        (agent-free agent)))))
 
 (defun make-publickey-auth (login directory private-key-name &optional (password ""))
   (let ((private-key
@@ -294,29 +294,32 @@
                   :type     int)
    (input-pos     :type     int
                   :initform 0
-                  :accessor input-pos)))
+                  :accessor input-pos)
+   (non-blocking  :type     boolean
+                  :initform nil
+                  :accessor non-blocking)))
 
 (defclass ssh-channel-stream-input/output
-  (ssh-channel-stream-input
-   ssh-channel-stream-output)
+    (ssh-channel-stream-input
+     ssh-channel-stream-output)
   ())
 
 (defclass ssh-channel-exec
-  (ssh-channel-stream-input/output
-   fundamental-binary-output-stream
-   fundamental-character-output-stream
-   fundamental-binary-input-stream
-   fundamental-character-input-stream)
+    (ssh-channel-stream-input/output
+     fundamental-binary-output-stream
+     fundamental-character-output-stream
+     fundamental-binary-input-stream
+     fundamental-character-input-stream)
   ())
 
 (defclass ssh-channel-recv
-  (ssh-channel-stream-input
-   fundamental-binary-input-stream)
+    (ssh-channel-stream-input
+     fundamental-binary-input-stream)
   ())
 
 (defclass ssh-channel-send
-  (ssh-channel-stream-output
-   fundamental-binary-output-stream)
+    (ssh-channel-stream-output
+     fundamental-binary-output-stream)
   ())
 
 (defmethod stream-element-type ((stream ssh-channel-stream))
@@ -331,18 +334,18 @@
 
 (defmethod stream-read-byte ((stream ssh-channel-stream-input))
   (cond
-  ((< (input-pos stream) (input-size stream))
-   (prog1 (elt (input-buffer stream) (input-pos stream))
-     (incf (input-pos stream))))
-  (t (progn
-     (multiple-value-bind (amount eof)
-       (channel-read (channel stream)
-               (input-buffer stream))
-       (if eof :eof
-         (progn
-         (setf (input-pos   stream)  1)
-         (setf (input-size  stream)  amount)
-         (elt  (input-buffer stream) 0))))))))
+    ((< (input-pos stream) (input-size stream))
+     (prog1 (elt (input-buffer stream) (input-pos stream))
+       (incf (input-pos stream))))
+    (t (progn
+         (multiple-value-bind (amount eof)
+             (channel-read (channel stream)
+                           (input-buffer stream))
+           (if eof :eof
+               (progn
+                 (setf (input-pos   stream)  1)
+                 (setf (input-size  stream)  amount)
+                 (elt  (input-buffer stream) 0))))))))
 
 ;; Looks like libssh2 sends 0 byte as EOF. Crazy shit :]
 (defmethod stream-read-sequence ((stream ssh-channel-recv) thing start end &key)
@@ -357,39 +360,41 @@
 (defmethod stream-read-sequence ((stream ssh-channel-stream-input) thing start end &key)
   (let ((request-size (- end start))
         (this-eof     nil))
-  (with-slots (channel input-size input-buffer input-pos) stream
-    (labels
-      ((buffer-to-output ()
-       (let* ((buffered-portion-size (- input-size input-pos ))
-          (replaced-size (min buffered-portion-size request-size)))
-         (when (> replaced-size 0)
-         (replace thing input-buffer
-              :start1 start     :end1 (+ start
-                           replaced-size)
-              :start2 input-pos :end2 (+ input-pos
-                           replaced-size))
-         (incf input-pos    replaced-size)
-         (incf start        replaced-size)
-         (decf request-size replaced-size))))
+    (with-slots (channel input-size input-buffer input-pos non-blocking) stream
+      (labels
+          ((buffer-to-output ()
+             (let* ((buffered-portion-size (- input-size input-pos ))
+                    (replaced-size (min buffered-portion-size request-size)))
+               (when (> replaced-size 0)
+                 (replace thing input-buffer
+                          :start1 start     :end1 (+ start
+                                                     replaced-size)
+                          :start2 input-pos :end2 (+ input-pos
+                                                     replaced-size))
+                 (incf input-pos    replaced-size)
+                 (incf start        replaced-size)
+                 (decf request-size replaced-size))))
 
-       (fill-buffer-and-output ()
-       (multiple-value-bind (amount eof)
-         (channel-read channel input-buffer)
+           (fill-buffer-and-output ()
+             (multiple-value-bind (amount eof)
+                 (channel-read channel input-buffer)
 
-         (setf input-size amount)
-         (setf input-pos  0)
+               (if (integerp amount)
+                   (progn
+                     (setf input-size amount)
+                     (setf input-pos  0)
 
-         (buffer-to-output)
-         (unless (or (= request-size 0) eof)
-           (fill-buffer-and-output))
-         (when eof (setq this-eof t)))))
+                     (buffer-to-output)
+                     (unless (or (= request-size 0) eof non-blocking)
+                       (fill-buffer-and-output))
+                     (when eof (setq this-eof t)))))))
 
-    (buffer-to-output)
-    (when (> request-size 0)
-      (fill-buffer-and-output))
-    (values
-     start
-     this-eof)))))
+        (buffer-to-output)
+        (when (> request-size 0)
+          (fill-buffer-and-output))
+        (values
+         start
+         this-eof)))))
 
 (defmethod stream-read-line ((stream ssh-channel-stream-input))
   (let ((output '()))
@@ -483,11 +488,11 @@
 (defmethod stream-write-byte ((stream ssh-channel-stream-output) byte)
   (with-slots (output-size output-buffer) stream
     (if (>= output-size (length output-buffer))
-      (stream-finish-output* stream :dont-send-eof t))
+        (stream-finish-output* stream :dont-send-eof t))
     (when (< output-size (length output-buffer))
-    (prog1
-      (setf (aref output-buffer output-size) byte)
-      (incf output-size 1)))))
+      (prog1
+          (setf (aref output-buffer output-size) byte)
+        (incf output-size 1)))))
 
 (defmethod stream-write-char ((stream ssh-channel-stream-output) char)
   (stream-write-byte stream (char-code char)))
@@ -544,71 +549,71 @@
 
 (defmethod execute ((ssh ssh-connection) (command string))
   (with-slots (socket session) ssh
-  (let ((new-channel
-       (channel-open session)))
-    (if (pointerp new-channel)
-      (if (not (null-pointer-p new-channel))
-        (let ((retval (channel-exec new-channel command)))
-        (if (eq retval :ERROR-NONE)
-          (make-instance 'ssh-channel-exec
-                   :socket  socket
-                   :channel new-channel)
-          (throw-last-error session)))
-        (throw-last-error session))
-      (throw-last-error session)))))
+    (let ((new-channel
+           (channel-open session)))
+      (if (pointerp new-channel)
+          (if (not (null-pointer-p new-channel))
+              (let ((retval (channel-exec new-channel command)))
+                (if (eq retval :ERROR-NONE)
+                    (make-instance 'ssh-channel-exec
+                                   :socket  socket
+                                   :channel new-channel)
+                    (throw-last-error session)))
+              (throw-last-error session))
+          (throw-last-error session)))))
 
 (defmethod pty ((ssh ssh-connection) &key (terminal "vanilla") (width 80) (height 24) (width-px 0) (height-px 0))
   (with-slots (socket session) ssh
     (let ((new-channel
-            (channel-open session)))
+           (channel-open session)))
       (if (pointerp new-channel)
           (if (not (null-pointer-p new-channel))
               (if (eq (channel-request-pty new-channel :terminal terminal
-                                                       :width width
-                                                       :height height
-                                                       :width-px width-px
-                                                       :height-px height-px) :ERROR-NONE)
+                                           :width width
+                                           :height height
+                                           :width-px width-px
+                                           :height-px height-px) :ERROR-NONE)
                   (let ((retval (channel-shell new-channel)))
                     (if (eq retval :ERROR-NONE)
                         (make-instance 'ssh-channel-exec
-                                   :socket  socket
-                                   :channel new-channel)
-                    (throw-last-error session))))
+                                       :socket  socket
+                                       :channel new-channel)
+                        (throw-last-error session))))
               (throw-last-error session))
           (throw-last-error session)))))
 
 (defmethod scp-input ((ssh ssh-connection) (path string))
   (multiple-value-bind (new-channel stat)
-    (channel-scp-recv (session ssh) path)
-  (unless (null-pointer-p new-channel)
-    (values
-     (make-instance 'ssh-channel-recv
-            :socket  (socket ssh)
-            :channel new-channel)
-     stat))))
+      (channel-scp-recv (session ssh) path)
+    (unless (null-pointer-p new-channel)
+      (values
+       (make-instance 'ssh-channel-recv
+                      :socket  (socket ssh)
+                      :channel new-channel)
+       stat))))
 
 (defmethod scp-output ((ssh ssh-connection) (path string) size
-             &key mode mtime atime)
+                       &key mode mtime atime)
   (let ((new-channel
-     (channel-scp-send (session ssh) path size
-               :mode  mode
-               :mtime mtime
-               :atime atime)))
-  (unless (null-pointer-p new-channel)
-    (make-instance 'ssh-channel-send
-           :socket  (socket ssh)
-           :channel new-channel))))
+         (channel-scp-send (session ssh) path size
+                           :mode  mode
+                           :mtime mtime
+                           :atime atime)))
+    (unless (null-pointer-p new-channel)
+      (make-instance 'ssh-channel-send
+                     :socket  (socket ssh)
+                     :channel new-channel))))
 
 (defmacro with-execute ((stdio-stream ssh-connection command)
-            &body body)
+                        &body body)
   `(let ((,stdio-stream (execute ,ssh-connection ,command)))
-   (unwind-protect
-      (let ((body-retval
-         (progn ,@body)))
-      (values-list
-       (list body-retval
-           (channel-exit-status (channel ,stdio-stream)))))
-     (close ,stdio-stream))))
+     (unwind-protect
+          (let ((body-retval
+                 (progn ,@body)))
+            (values-list
+             (list body-retval
+                   (channel-exit-status (channel ,stdio-stream)))))
+       (close ,stdio-stream))))
 
 (defmacro with-execute* ((stdio-stream ssh-connection command)
                          &body body)
@@ -618,32 +623,32 @@
        ,@body)))
 
 (defmacro with-pty ((stdio-stream ssh-connection &key (terminal "vanilla") (width 80) (height 24) (width-px 0) (height-px 0))
-            &body body)
+                    &body body)
   `(let ((,stdio-stream (pty ,ssh-connection :terminal ,terminal :width ,width :height ,height :width-px ,width-px :height-px ,height-px)))
-   (unwind-protect
-      (let ((body-retval
-              (let ((*channel-read-zero-as-eof* t)) ,@body)))
-        (values-list
-         (list body-retval
-               (channel-exit-status (channel ,stdio-stream)))))
-     (close ,stdio-stream))))
+     (unwind-protect
+          (let ((body-retval
+                 (let ((*channel-read-zero-as-eof* t)) ,@body)))
+            (values-list
+             (list body-retval
+                   (channel-exit-status (channel ,stdio-stream)))))
+       (close ,stdio-stream))))
 
 
 (defmacro with-scp-input ((istream ssh-connection path object-stat)
-              &body body)
+                          &body body)
   `(multiple-value-bind (,istream ,object-stat)
-     (scp-input ,ssh-connection ,path)
-   (declare (ignore ,object-stat))
-   (unwind-protect
-      (progn
-      ,@body)
-     (close ,istream))))
+       (scp-input ,ssh-connection ,path)
+     (declare (ignore ,object-stat))
+     (unwind-protect
+          (progn
+            ,@body)
+       (close ,istream))))
 
 (defmacro with-scp-output ((ostream ssh-connection path size &key
-                    mtime atime mode) &body body)
+                                    mtime atime mode) &body body)
   `(let ((,ostream (scp-output ,ssh-connection ,path ,size
-                 :mode ,mode :atime ,atime, :mtime ,mtime)))
-   (unwind-protect
-      (progn
-      ,@body)
-     (close ,ostream))))
+                               :mode ,mode :atime ,atime, :mtime ,mtime)))
+     (unwind-protect
+          (progn
+            ,@body)
+       (close ,ostream))))

@@ -38,6 +38,7 @@
            :channel-free
            :channel-wait-closed
            :channel-setenv
+           :channel-set-blocking
            :channel-process-start
            :channel-exec
            :channel-shell
@@ -52,7 +53,6 @@
            :channel-scp-recv
            :channel-request-pty
            :channel-request-pty-size
-
 
            ;; STREAMS API // BLOCKING
 
@@ -101,6 +101,7 @@
            :OUTPUT-SIZE
            :INTPUT-POS
            :OUTPUT-POS
+           :NON-BLOCKING
            :STREAM-ELEMENT-TYPE
            :OPEN-STREAM-P
            :STREAM-LISTEN
